@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> fetchVideo() async {
     if (_controller.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a valid URL")),
+        const SnackBar(content: Text("⚠️ Please enter a valid URL")),
       );
       return;
     }
@@ -49,12 +49,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final info = await VideoService.fetchVideoInfo(_controller.text);
-      setState(() {
-        _videoInfo = info;
-      });
+
+      if (info != null) {
+        setState(() {
+          _videoInfo = info;
+        });
+        print("✅ Video Info Updated in UI: ${info.title}");
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Failed to get video info.")),
+        );
+      }
     } catch (e) {
+      print("❌ Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching video: $e")),
+        SnackBar(content: Text("❌ Error fetching video: $e")),
       );
     } finally {
       setState(() => _isFetching = false);
@@ -84,7 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!hasPermission) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Storage permission is required to download!")),
+        const SnackBar(
+            content: Text("Storage permission is required to download!")),
       );
       return;
     }
@@ -109,7 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // ✅ Show correct message based on success/failure
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(success ? "Download Completed" : "Download Failed")),
+      SnackBar(
+          content: Text(success ? "Download Completed" : "Download Failed")),
     );
   }
 
@@ -186,7 +197,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 5),
                       Text("Duration: ${formatDuration(_videoInfo!.duration)}"),
                       const SizedBox(height: 5),
-
                       if (_videoInfo!.thumbnailUrl.isNotEmpty)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -209,9 +219,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: _selectedQuality,
                   items: ['144p', '360p', '480p', '720p', '1080p']
                       .map((quality) => DropdownMenuItem(
-                    value: quality,
-                    child: Text(quality),
-                  ))
+                            value: quality,
+                            child: Text(quality),
+                          ))
                       .toList(),
                   onChanged: (newQuality) {
                     setState(() => _selectedQuality = newQuality!);
@@ -221,7 +231,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Directory Selection
                 ElevatedButton(
                   onPressed: selectDirectory,
-                  child: Text(_selectedDirectory != null && _selectedDirectory!.isNotEmpty
+                  child: Text(_selectedDirectory != null &&
+                          _selectedDirectory!.isNotEmpty
                       ? "Selected: $_selectedDirectory"
                       : "Select Download Directory"),
                 ),
@@ -230,16 +241,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                   onPressed: _isDownloading
                       ? null
-                      : () async { // ✅ Wrap in anonymous function
-                    bool hasPermission = await PermissionService.requestStoragePermission();
-                    if (!hasPermission) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Storage permission required!")),
-                      );
-                      return;
-                    }
-                    downloadVideo(_videoInfo!.downloadUrl, _videoInfo!.title);
-                  },
+                      : () async {
+                          // ✅ Wrap in anonymous function
+                          bool hasPermission = await PermissionService
+                              .requestStoragePermission();
+                          if (!hasPermission) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content:
+                                      Text("Storage permission required!")),
+                            );
+                            return;
+                          }
+                          downloadVideo(
+                              _videoInfo!.downloadUrl, _videoInfo!.title);
+                        },
                   child: const Text("Download Video"),
                 ),
 
