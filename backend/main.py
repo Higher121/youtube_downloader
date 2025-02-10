@@ -27,17 +27,22 @@ def get_video_info():
 
             qualities = []
             for fmt in formats:
+                # Check for a valid height value
                 height = fmt.get('height')
-                format_note = fmt.get('format_note', '')
+                if not height:
+                    continue  # Skip formats with no height information
 
-                # Use height if format_note is missing
+                format_note = fmt.get('format_note', '')
+                # Use format_note if it's one of the desired qualities; otherwise, fallback to height-based label
                 quality_label = format_note if format_note in desired_qualities else f"{height}p"
 
                 if quality_label in desired_qualities:
-                    size = fmt.get('filesize') or fmt.get('filesize_approx', 'N/A')  # Approximate size fallback
-                    qualities.append({'quality': quality_label, 'size': size if size != 'N/A' else 'Unknown'})
+                    # Use filesize or filesize_approx; if missing, set as 'Unknown'
+                    size = fmt.get('filesize') or fmt.get('filesize_approx')
+                    size_val = size if size is not None else 'Unknown'
+                    qualities.append({'quality': quality_label, 'size': size_val})
 
-            # Remove duplicates
+            # Remove duplicates by quality label
             qualities = list({v['quality']: v for v in qualities}.values())
 
             return jsonify({
